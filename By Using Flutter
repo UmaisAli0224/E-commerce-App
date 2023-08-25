@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class ProductListingScreen extends StatefulWidget {
+  @override
+  _ProductListingScreenState createState() => _ProductListingScreenState();
+}
+
+class _ProductListingScreenState extends State<ProductListingScreen> {
+  List<Product> products = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();
+  }
+
+  Future<void> fetchProducts() async {
+    final response = await http.get('your_api_url');
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      setState(() {
+        products = (jsonData['products'] as List)
+            .map((productData) => Product.fromJson(productData))
+            .toList();
+      });
+    } else {
+      // Handle error
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Product Listing'),
+      ),
+      body: ListView.builder(
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(products[index].name),
+            subtitle: Text(products[index].price.toString()),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductDetailsScreen(product: products[index]),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class Product {
+  final String id;
+  final String name;
+  final double price;
+  final String description;
+  // Other properties
+
+  Product({required this.id, required this.name, required this.price, required this.description});
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      name: json['name'],
+      price: json['price'].toDouble(),
+      description: json['description'],
+    );
+  }
+}
+
+class ProductDetailsScreen extends StatelessWidget {
+  final Product product;
+
+  ProductDetailsScreen({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(product.name),
+      ),
+      body: Column(
+        children: [
+          Hero(
+            tag: product.id,
+            child: Image.network(product.imageUrl),
+          ),
+          Text(product.name),
+          Text(product.price.toString()),
+          Text(product.description),
+        ],
+      ),
+    );
+  }
+}
